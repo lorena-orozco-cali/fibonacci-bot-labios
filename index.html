@@ -188,20 +188,21 @@ function addAsesorCard(nombre){
 
 function setInput(enabled){ userInput.disabled=!enabled; sendBtn.disabled=!enabled; if(enabled) userInput.focus(); }
 
-async function respuestaLibre(msg){
-  conversationHistory.push({role:"user",content:msg});
-  try{
-    const res = await fetch("/api/chat",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({system:SYSTEM_LIBRE, messages:conversationHistory})
-    });
-    const data=await res.json();
-    if(data.error) return null;
-    const reply=data.content[0].text;
-    conversationHistory.push({role:"assistant",content:reply});
-    return reply;
-  }catch(e){ return null; }
+function respuestaLibre(msg){
+  const m = msg.toLowerCase().trim();
+  if(m.includes("hola")||m.includes("buenas")||m.includes("hey")||m.includes("hi")){
+    return Promise.resolve("¡Hola! Bienvenid@, con gusto te atiendo 😊");
+  }
+  if(m.includes("precio")||m.includes("cuesta")||m.includes("vale")||m.includes("costo")){
+    return Promise.resolve("Los precios los maneja nuestro equipo según una valoración personalizada 😊");
+  }
+  if(m.includes("gracias")){
+    return Promise.resolve("¡Con mucho gusto! Estamos aquí para ayudarte 🌿");
+  }
+  if(m.includes("quien")||m.includes("qué es")||m.includes("que es")){
+    return Promise.resolve("Soy el asistente virtual de Clínica Fibonacci, aquí para orientarte sobre nuestro servicio de diseño labial ✨");
+  }
+  return Promise.resolve("Entendido 😊 Continuemos con tu proceso de valoración.");
 }
 
 function esMensajeFlujo(msg){
