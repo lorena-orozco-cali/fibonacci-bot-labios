@@ -102,6 +102,12 @@ Personalidad: cálida, elegante. Emojis sutiles. Respuestas muy cortas (máx 2 o
 - Otros servicios: menciona brevemente y retoma el tema de labios.
 - NUNCA inventes precios ni prometas resultados.`;
 
+// Sistema para detectar si una respuesta es relevante al contexto
+const SYSTEM_DETECTOR = `Eres un detector de relevancia. Responde SOLO con "SI" o "NO".
+¿El mensaje del usuario es una respuesta relevante a la pregunta que se le hizo?
+Si el mensaje es un saludo, pregunta diferente, o algo sin relación con la pregunta, responde "NO".
+Si el mensaje responde directamente la pregunta (aunque sea brevemente), responde "SI".`;
+
 function scroll(){ chat.scrollTop = chat.scrollHeight; }
 
 function addBotMsg(html, delay, isError){
@@ -181,6 +187,22 @@ function addAsesorCard(nombre){
 
 function setInput(enabled){ userInput.disabled=!enabled; sendBtn.disabled=!enabled; if(enabled) userInput.focus(); }
 
+async function esRespuestaRelevante(msg, pregunta){
+  try{
+    const res = await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        system: SYSTEM_DETECTOR,
+        messages: [{role:"user", content:"Pregunta: "+pregunta+"\nRespuesta del usuario: "+msg}]
+      })
+    });
+    const data = await res.json();
+    if(data.error) return false;
+    return data.content[0].text.trim().toUpperCase().includes("SI");
+  }catch(e){ return false; }
+}
+
 async function respuestaLibre(msg){
   conversationHistory.push({role:"user",content:msg});
   try{
@@ -227,11 +249,19 @@ async function handleMessage(msg){
     }
   }
 
-  // Paso producto: cualquier respuesta es válida
+  // Paso producto: verificar que la respuesta sea relevante
   if(state.step==="pregunta_producto"){
-    state.step="pedir_fotos";
-    await addBotMsg(MSGS.anotado);
-    await pedirFotos(); return;
+    const esRelevante = await esRespuestaRelevante(msg, "¿Cuándo fue la última vez que lo aplicaste?");
+    if(esRelevante){
+      state.step="pedir_fotos";
+      await addBotMsg(MSGS.anotado);
+      await pedirFotos(); return;
+    } else {
+      const resp = await respuestaLibre(msg);
+      if(resp) await addBotMsg(resp);
+      await addBotMsg(MSGS.pregunta_producto, 800);
+      setInput(true); return;
+    }
   }
 
   // Paso nombre: cualquier respuesta es válida
