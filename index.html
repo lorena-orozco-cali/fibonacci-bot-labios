@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Fibonacci · Diseño de Labios</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --gold:#C9A96E;--gold-light:#E8D5B0;--gold-dark:#A07840;
+  --cream:#FAF7F2;--sand:#F2EBE0;--brown:#2C1F0E;--brown-mid:#5C4033;
+  --white:#FFFFFF;--gray:#8A8078;--green:#3D6B4F;--green-light:#EAF2ED;
+  --rose:#C0737A;--rose-light:#F9EDEF;
+}
+html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--cream);overflow:hidden;}
+.app{display:flex;flex-direction:column;width:100%;max-width:460px;height:100%;margin:0 auto;background:var(--white);}
+.header{background:var(--brown);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.header-avatar{width:42px;height:42px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:"Cormorant Garamond",serif;font-size:20px;color:var(--brown);font-weight:500;flex-shrink:0;border:2px solid var(--gold-light);}
+.header-info{display:flex;flex-direction:column;}
+.header-name{font-family:"Cormorant Garamond",serif;font-size:16px;color:var(--gold-light);font-weight:500;}
+.header-status{font-size:12px;color:var(--gold);display:flex;align-items:center;gap:5px;margin-top:2px;}
+.dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;}
+.chat-wrapper{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px;display:flex;flex-direction:column;gap:12px;background:var(--cream);}
+.msg{display:flex;align-items:flex-end;gap:8px;animation:fadeUp 0.3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.msg.bot{flex-direction:row;}.msg.user{flex-direction:row-reverse;}
+.avatar-bot{width:28px;height:28px;border-radius:50%;background:var(--brown);display:flex;align-items:center;justify-content:center;font-family:"Cormorant Garamond",serif;font-size:12px;color:var(--gold);font-weight:500;flex-shrink:0;}
+.bubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.55;}
+.bubble.bot{background:var(--sand);color:var(--brown);border-bottom-left-radius:4px;}
+.bubble.bot em{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--gold-dark);}
+.bubble.user{background:var(--brown);color:var(--gold-light);border-bottom-right-radius:4px;}
+.bubble.error{background:var(--rose-light);color:var(--rose);border:1.5px solid #E8B4B8;border-bottom-left-radius:4px;}
+.typing-dots{display:flex;gap:4px;align-items:center;padding:2px 0;}
+.typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:bounce 1.2s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s;}
+.typing-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);}40%{transform:translateY(-6px);}}
+.options-row{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 2px 36px;animation:fadeUp 0.4s ease both;}
+.opt-btn{background:var(--white);border:1.5px solid var(--gold);color:var(--brown-mid);border-radius:20px;padding:9px 18px;font-size:13px;font-family:"DM Sans",sans-serif;cursor:pointer;-webkit-appearance:none;}
+.opt-btn:active{background:var(--gold);color:var(--white);}
+.ref-img-wrap{margin-left:36px;animation:fadeUp 0.4s ease both;}
+.ref-img-wrap img{width:100%;max-width:220px;border-radius:12px;border:2px solid var(--gold-light);display:block;}
+.ref-label{font-size:11px;color:var(--gray);margin-top:4px;font-style:italic;}
+.upload-zone{margin-left:36px;border:2px dashed var(--gold);border-radius:14px;padding:20px;text-align:center;cursor:pointer;background:var(--white);animation:fadeUp 0.4s ease both;}
+.upload-zone input{display:none;}
+.upload-icon{font-size:28px;margin-bottom:5px;}
+.upload-title{font-size:13px;color:var(--brown-mid);font-weight:500;}
+.upload-sub{font-size:11px;color:var(--gray);margin-top:3px;}
+.photo-preview{margin-left:36px;display:flex;gap:8px;flex-wrap:wrap;animation:fadeUp 0.35s ease both;}
+.photo-preview img{width:85px;height:85px;object-fit:cover;border-radius:10px;border:2px solid var(--gold-light);}
+.asesor-card{margin-left:36px;background:var(--green-light);border:1.5px solid var(--green);border-radius:14px;padding:14px;animation:fadeUp 0.4s ease both;}
+.asesor-title{font-family:"Cormorant Garamond",serif;font-size:16px;color:var(--green);font-weight:500;margin-bottom:5px;}
+.asesor-sub{font-size:13px;color:#2C5040;line-height:1.55;}
+.asesor-btn{margin-top:10px;background:var(--green);color:var(--white);border:none;border-radius:20px;padding:10px 20px;font-size:13px;cursor:pointer;font-family:"DM Sans",sans-serif;-webkit-appearance:none;display:inline-block;}
+.input-area{flex-shrink:0;background:var(--white);border-top:1px solid var(--sand);padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;}
+.txt-input{flex:1;border:1.5px solid var(--gold-light);border-radius:22px;padding:10px 14px;font-size:16px;font-family:"DM Sans",sans-serif;color:var(--brown);outline:none;background:var(--cream);-webkit-appearance:none;}
+.txt-input:focus{border-color:var(--gold);}
+.txt-input::placeholder{color:var(--gray);}
+.send-btn{width:40px;height:40px;border-radius:50%;background:var(--brown);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-appearance:none;}
+.send-btn svg{width:18px;height:18px;fill:var(--gold-light);}
+.branding{flex-shrink:0;font-size:10px;color:var(--gray);text-align:center;padding:6px;background:var(--white);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-avatar">F</div>
+    <div class="header-info">
+      <span class="header-name">Fibonacci · Dr. Esteban Pinto</span>
+      <span class="header-status"><span class="dot"></span> En línea ahora</span>
+    </div>
+  </div>
+  <div class="chat-wrapper" id="chat"></div>
+  <div class="input-area">
+    <input class="txt-input" id="userInput" placeholder="Escribe tu mensaje..." autocomplete="off"/>
+    <button class="send-btn" id="sendBtn">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+  <div class="branding">Fibonacci Clínica Odontológica · Dr. Esteban Pinto</div>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+
+// ── ESTADO DEL FLUJO ──
+let state = {
+  step: "inicio",
+  antecedentes: null,
+  producto: null,
+  fotos: false,
+  nombre: null
+};
+
+let conversationHistory = [];
+let waitingForInput = true;
+
+// ── SYSTEM PROMPT ──
+function getSystem() {
+  const pasos = {
+    "inicio":               "Acabas de iniciar. Da el saludo de bienvenida ahora.",
+    "pregunta_antecedentes":"Ya saludaste. Pregunta sobre antecedentes con ácido hialurónico. Termina con [BOTONES_SI_NO]",
+    "pregunta_producto":    "El cliente dijo que SÍ tiene antecedentes. Pregunta cuándo fue la última vez que lo aplicaste.",
+    "pedir_fotos":          "Ya tienes info de antecedentes. Pide las fotos de perfil y frente. Termina con [PEDIR_FOTO]",
+    "pedir_nombre":         "Las fotos fueron recibidas. Pide el nombre del cliente.",
+    "despedir":             "Ya tienes el nombre. Despídete con su nombre y termina con [MOSTRAR_ASESOR]",
+    "libre":                "El flujo terminó. Responde preguntas generales amablemente."
+  };
+
+  return `Eres el asistente virtual de Clínica Fibonacci del Dr. Esteban Pinto en Cali, Colombia. Atiendes clientes interesados en DISEÑO Y PERFILAMIENTO LABIAL.
+
+PERSONALIDAD: cálida, elegante, profesional. Emojis sutiles: 🌿 ✨ 😊 🙏 💫 👌. Español colombiano natural. Respuestas CORTAS (máximo 2-3 oraciones).
+
+PASO ACTUAL: ${pasos[state.step] || "Continúa el protocolo."}
+
+REGLAS:
+- Si alguien saluda fuera de contexto ("hola", "buenas"), respóndele y retoma el flujo.
+- Precios: "Los maneja nuestro equipo según valoración personalizada 😊"
+- Otros servicios: menciona brevemente (diseño de sonrisa, ortodoncia, odontología) y retoma el flujo.
+- NUNCA inventes precios ni prometas resultados médicos.
+- Usa estos marcadores EXACTOS al final cuando corresponda:
+  [BOTONES_SI_NO] → cuando debas mostrar opciones Sí / No
+  [PEDIR_FOTO] → cuando debas pedir las fotos
+  [MOSTRAR_ASESOR] → cuando el flujo termine completamente`;
+}
+
+// ── UI HELPERS ──
+function scroll(){ chat.scrollTop = chat.scrollHeight; }
+
+function addBotMsg(html, delay, isError){
+  delay = delay || 800;
+  return new Promise(function(res){
+    var t = document.createElement("div");
+    t.className = "msg bot";
+    t.innerHTML = '<div class="avatar-bot">F</div><div class="bubble bot"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+    chat.appendChild(t); scroll();
+    setTimeout(function(){
+      t.remove();
+      var d = document.createElement("div");
+      d.className = "msg bot";
+      d.innerHTML = '<div class="avatar-bot">F</div><div class="' + (isError ? "bubble error" : "bubble bot") + '">' + html + '</div>';
+      chat.appendChild(d); scroll(); res();
+    }, delay);
+  });
+}
+
+function addUserMsg(text){
+  var d = document.createElement("div");
+  d.className = "msg user";
+  d.innerHTML = '<div class="bubble user">' + text + '</div>';
+  chat.appendChild(d); scroll();
+}
+
+function addOptions(opts, callback){
+  var ex = document.getElementById("opts"); if(ex) ex.remove();
+  var row = document.createElement("div");
+  row.className = "options-row"; row.id = "opts";
+  opts.forEach(function(o){
+    var b = document.createElement("button");
+    b.className = "opt-btn"; b.textContent = o;
+    b.addEventListener("click", function(){
+      var el = document.getElementById("opts"); if(el) el.remove();
+      addUserMsg(o); processMessage(o);
+    });
+    row.appendChild(b);
+  });
+  chat.appendChild(row); scroll();
+}
+
+function addRefImage(){
+  if(document.getElementById("refImg")) return;
+  var wrap = document.createElement("div");
+  wrap.className = "ref-img-wrap"; wrap.id = "refImg";
+  wrap.innerHTML = '<img src="foto_referencia_labios.jpg" alt="Referencia"/><div class="ref-label">Referencia: así deben ser tus fotos 🪷</div>';
+  chat.appendChild(wrap); scroll();
+}
+
+function addUploadZone(){
+  var ex = document.getElementById("uploadZone"); if(ex) ex.remove();
+  var zone = document.createElement("div");
+  zone.className = "upload-zone"; zone.id = "uploadZone";
+  zone.innerHTML = '<input type="file" id="fileInput" accept="image/*" multiple capture="environment"/><div class="upload-icon">📷</div><div class="upload-title">Adjunta tus fotos aquí</div><div class="upload-sub">Selecciona foto de frente y de perfil</div>';
+  chat.appendChild(zone); scroll();
+
+  zone.addEventListener("click", function(e){
+    e.preventDefault();
+    document.getElementById("fileInput").click();
+  });
+
+  document.getElementById("fileInput").addEventListener("change", async function(){
+    var files = Array.from(this.files);
+    var el = document.getElementById("uploadZone"); if(el) el.remove();
+
+    if(files.length < 2){
+      var prev = document.createElement("div"); prev.className = "photo-preview";
+      files.forEach(function(f){ var img=document.createElement("img"); img.src=URL.createObjectURL(f); prev.appendChild(img); });
+      chat.appendChild(prev); scroll();
+      await addBotMsg("¡Ay, qué pena! 🥺 Necesitamos <em>dos fotos</em>: una de frente y una de perfil. ¿Podrías intentarlo de nuevo? 🌿", 900, true);
+      addUploadZone();
+      return;
+    }
+
+    var prev = document.createElement("div"); prev.className = "photo-preview";
+    files.forEach(function(f){ var img=document.createElement("img"); img.src=URL.createObjectURL(f); prev.appendChild(img); });
+    chat.appendChild(prev); scroll();
+
+    state.fotos = true;
+    state.step = "pedir_nombre";
+    await addBotMsg("¡Muchas Gracias! Recibimos tus fotos correctamente. 📸🙏", 700);
+    setInput(true);
+    await processMessage("__FOTOS_RECIBIDAS__");
+  });
+}
+
+function addAsesorCard(){
+  if(document.getElementById("asesorCard")) return;
+  var card = document.createElement("div"); card.className = "asesor-card"; card.id = "asesorCard";
+  card.innerHTML = '<div class="asesor-title">✦ Un asesor revisará tu caso</div><div class="asesor-sub">Hemos recibido toda tu información y tus fotos. Nuestro equipo especializado se pondrá en contacto contigo personalmente para orientarte y agendar tu cita, en el menor tiempo posible 😊</div><button class="asesor-btn" id="waBtn">Confirmar por WhatsApp</button>';
+  chat.appendChild(card); scroll();
+  document.getElementById("waBtn").addEventListener("click", function(){ window.open("https://wa.me/573502480590","_blank"); });
+  setInput(false);
+}
+
+function setInput(enabled){
+  userInput.disabled = !enabled;
+  sendBtn.disabled = !enabled;
+  if(enabled) { userInput.focus(); }
+}
+
+// ── LLAMADA AL BACKEND (Netlify Function) ──
+async function askClaude(userMsg) {
+  conversationHistory.push({ role: "user", content: userMsg });
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system: getSystem(),
+        messages: conversationHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content[0].text;
+    conversationHistory.push({ role: "assistant", content: reply });
+    return reply;
+  } catch(e) {
+    return "Disculpa, tuve un problema técnico. ¿Podrías repetir tu mensaje? 🙏";
+  }
+}
+
+// ── PROCESAR MENSAJE ──
+async function processMessage(userMsg) {
+  setInput(false);
+
+  // Actualizar estado según mensaje
+  if(userMsg === "Sí" || (state.step === "pregunta_antecedentes" && userMsg.toLowerCase().includes("si"))) {
+    state.antecedentes = true;
+    if(state.step === "pregunta_antecedentes") state.step = "pregunta_producto";
+  } else if(userMsg === "No" && state.step === "pregunta_antecedentes") {
+    state.antecedentes = false;
+    state.step = "pedir_fotos";
+  } else if(state.step === "pregunta_producto" && userMsg !== "__INICIO__") {
+    state.producto = userMsg;
+    state.step = "pedir_fotos";
+  } else if(userMsg === "__FOTOS_RECIBIDAS__") {
+    state.step = "pedir_nombre";
+  } else if(state.step === "pedir_nombre" && userMsg !== "__FOTOS_RECIBIDAS__") {
+    state.nombre = userMsg;
+    state.step = "despedir";
+  }
+
+  const reply = await askClaude(userMsg === "__INICIO__" ? "Inicia la conversación" : 
+                                userMsg === "__FOTOS_RECIBIDAS__" ? "Las fotos fueron recibidas exitosamente. Ahora pide el nombre." : 
+                                userMsg);
+
+  // Limpiar marcadores del texto visible
+  let visible = reply
+    .replace(/\[BOTONES_SI_NO\]/g, "")
+    .replace(/\[PEDIR_FOTO\]/g, "")
+    .replace(/\[MOSTRAR_ASESOR\]/g, "")
+    .trim();
+
+  if(visible) await addBotMsg(visible);
+
+  // Ejecutar acciones
+  if(reply.includes("[BOTONES_SI_NO]")) {
+    state.step = "pregunta_antecedentes";
+    addOptions(["Sí", "No"], processMessage);
+    return;
+  }
+
+  if(reply.includes("[PEDIR_FOTO]")) {
+    state.step = "pedir_fotos";
+    addRefImage();
+    setTimeout(addUploadZone, 600);
+    return;
+  }
+
+  if(reply.includes("[MOSTRAR_ASESOR]")) {
+    state.step = "libre";
+    setTimeout(addAsesorCard, 400);
+    return;
+  }
+
+  // Si el paso es pedir_fotos pero la IA no puso el marcador, igual mostramos zona de subida
+  if(state.step === "pedir_fotos" && !document.getElementById("uploadZone")) {
+    addRefImage();
+    setTimeout(addUploadZone, 600);
+    return;
+  }
+
+  if(state.step !== "libre") setInput(true);
+}
+
+// ── ENVIAR TEXTO ──
+function sendText(){
+  var val = userInput.value.trim(); if(!val) return;
+  userInput.value = "";
+  addUserMsg(val);
+  processMessage(val);
+}
+
+sendBtn.addEventListener("click", sendText);
+userInput.addEventListener("keydown", function(e){ if(e.key === "Enter") sendText(); });
+
+// ── INICIO ──
+window.addEventListener("load", function(){
+  setInput(false);
+  processMessage("__INICIO__");
+});
+</script>
+</body>
+</html>
