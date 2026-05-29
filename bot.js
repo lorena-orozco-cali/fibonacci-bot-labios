@@ -11,6 +11,21 @@ var M={
   s9:"Por favor, ind\u00edcanos tu nombre y en breve nuestro equipo te contactar\u00e1 para continuar tu valoraci\u00f3n.",
   s10:"Hemos recibido toda tu informaci\u00f3n y tus fotos. Nuestro equipo especializado se pondr\u00e1 en contacto contigo personalmente para orientarte y agendar tu cita, en el menor tiempo posible \uD83D\uDE0A"
 };
+
+// Respuestas fijas de fallback
+function fallback(m){
+  var t=m.toLowerCase();
+  if(t.indexOf("precio")>=0||t.indexOf("cuesta")>=0||t.indexOf("cuanto")>=0||t.indexOf("valor")>=0)
+    return "Los precios los maneja nuestro equipo seg\u00FAn una valoraci\u00f3n personalizada \uD83D\uDE0A Nuestro asesor te dar\u00e1 toda la informaci\u00f3n.";
+  if(t.indexOf("hola")>=0||t.indexOf("buenas")>=0||t.indexOf("hey")>=0)
+    return "\u00A1Hola! Bienvenid@, con gusto te atiendo \uD83D\uDE0A";
+  if(t.indexOf("gracias")>=0)
+    return "\u00A1Con mucho gusto! Estamos aqu\u00ed para ayudarte \uD83C\uDF3F";
+  if(t.indexOf("donde")>=0||t.indexOf("ubicaci")>=0)
+    return "Estamos en Cali, Colombia. Nuestro equipo te dar\u00e1 la direcci\u00f3n exacta al contactarte \uD83D\uDE0A";
+  return "Entendido \uD83D\uDE0A Continuemos con tu proceso de valoraci\u00f3n.";
+}
+
 function sc(){chat.scrollTop=chat.scrollHeight;}
 function en(on){inp.disabled=!on;btn.disabled=!on;if(on)inp.focus();}
 function bm(h,d,e){
@@ -69,12 +84,30 @@ function sa(){
 }
 function ef(m){
   var t=m.toLowerCase();
-  return ["hola","buenas","hey","precio","cuesta","cuanto","gracias","quien","donde"].some(function(p){return t.indexOf(p)>=0;});
+  return ["hola","buenas","hey","precio","cuesta","cuanto","gracias","quien","donde","valor"].some(function(p){return t.indexOf(p)>=0;});
 }
+
+// IA con fallback automático
 function cia(txt,ctx,cb){
-  fetch("/.netlify/functions/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system:"Eres asistente de Clinica Fibonacci, Dr. Esteban Pinto, Cali. Diseno labial. Respuestas cortas. Contexto: "+ctx+". Precios: el equipo los maneja segun valoracion personalizada.",messages:[{role:"user",content:txt}]})})
-  .then(function(r){return r.json();}).then(function(d){cb(d&&d.content&&d.content[0]?d.content[0].text:null);}).catch(function(){cb(null);});
+  var done=false;
+  // Timeout de 5 segundos - si no responde usa fallback
+  var timer=setTimeout(function(){
+    if(!done){done=true;cb(fallback(txt));}
+  },5000);
+  fetch("/.netlify/functions/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      system:"Eres asistente de Clinica Fibonacci, Dr. Esteban Pinto, Cali. Diseno labial. Respuestas cortas 1-2 oraciones. Contexto: "+ctx+". Precios: el equipo los maneja segun valoracion personalizada.",
+      messages:[{role:"user",content:txt}]
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    if(!done){done=true;clearTimeout(timer);cb(d&&d.content&&d.content[0]?d.content[0].text:fallback(txt));}
+  }).catch(function(){
+    if(!done){done=true;clearTimeout(timer);cb(fallback(txt));}
+  });
 }
+
 function hd(m){
   en(false);
   if(step==="pregunta_antecedentes"){
@@ -82,22 +115,20 @@ function hd(m){
     if(t==="s\u00ed"||t==="si"){step="pregunta_producto";bm(M.s4).then(function(){en(true);});return;}
     if(t==="no"){step="pedir_fotos";bm(M.s6,600).then(function(){return bm(M.s7,1000);}).then(function(){sr();setTimeout(su,500);en(true);});return;}
     cia(m,"Usuario debe responder si/no sobre procedimientos previos con acido hialuronico.",function(r){
-      var p=r?bm(r,600):Promise.resolve();
-      p.then(function(){return bm(M.s3,700);}).then(function(){so(["S\u00ed","No"],hd);});
+      bm(r,600).then(function(){return bm(M.s3,700);}).then(function(){so(["S\u00ed","No"],hd);});
     });return;
   }
   if(step==="pregunta_producto"){
-    if(ef(m)){cia(m,"Usuario debe indicar cuando fue su ultima aplicacion de acido hialuronico.",function(r){var p=r?bm(r,600):Promise.resolve();p.then(function(){return bm(M.s4,700);}).then(function(){en(true);});});return;}
+    if(ef(m)){cia(m,"Usuario debe indicar cuando fue su ultima aplicacion de acido hialuronico.",function(r){bm(r,600).then(function(){return bm(M.s4,700);}).then(function(){en(true);});});return;}
     step="pedir_fotos";bm(M.s5).then(function(){return bm(M.s7,1000);}).then(function(){sr();setTimeout(su,500);en(true);});return;
   }
   if(step==="pedir_fotos"){
     cia(m,"Usuario debe subir dos fotos de rostro frente y perfil.",function(r){
-      var p=r?bm(r,600):Promise.resolve();
-      p.then(function(){if(!document.getElementById("uz")){sr();setTimeout(su,400);}en(true);});
+      bm(r,600).then(function(){if(!document.getElementById("uz")){sr();setTimeout(su,400);}en(true);});
     });return;
   }
   if(step==="pedir_nombre"){
-    if(ef(m)){cia(m,"Usuario debe indicar su nombre.",function(r){var p=r?bm(r,600):Promise.resolve();p.then(function(){return bm(M.s9,700);}).then(function(){en(true);});});return;}
+    if(ef(m)){cia(m,"Usuario debe indicar su nombre.",function(r){bm(r,600).then(function(){return bm(M.s9,700);}).then(function(){en(true);});});return;}
     var n=m.split(" ")[0];step="fin";
     bm("<em>"+n+"</em>, muchas gracias por tu confianza. Pronto descubrir\u00e1s por qu\u00e9 somos la mejor opci\u00f3n cuando buscas armon\u00eda y salud \u2728",900).then(function(){sa();});return;
   }
