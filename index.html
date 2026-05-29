@@ -130,7 +130,14 @@ function addOptions(opts, callback){
   var row=document.createElement("div"); row.className="options-row"; row.id="opts";
   opts.forEach(function(o){
     var b=document.createElement("button"); b.className="opt-btn"; b.textContent=o;
-    b.addEventListener("click",function(){ var el=document.getElementById("opts"); if(el)el.remove(); addUserMsg(o); callback(o); });
+    b.addEventListener("click",function(){
+      // Deshabilitar todos los botones inmediatamente
+      var row=document.getElementById("opts");
+      if(row){ row.querySelectorAll("button").forEach(function(btn){ btn.disabled=true; btn.style.opacity="0.5"; }); }
+      addUserMsg(o);
+      if(row) row.remove();
+      callback(o);
+    });
     row.appendChild(b);
   });
   chat.appendChild(row); scroll();
