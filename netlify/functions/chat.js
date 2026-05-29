@@ -7,7 +7,12 @@ exports.handler = async function(event) {
     const result = await new Promise((resolve, reject) => {
       const req = https.request({
         hostname: "api.anthropic.com", path: "/v1/messages", method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": "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", "anthropic-version": "2023-06-01", "Content-Length": Buffer.byteLength(payload) }
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Length": Buffer.byteLength(payload)
+        }
       }, (res) => { let d=""; res.on("data",(c)=>d+=c); res.on("end",()=>resolve(d)); });
       req.on("error", reject); req.write(payload); req.end();
     });
