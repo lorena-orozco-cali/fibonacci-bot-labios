@@ -102,12 +102,6 @@ Personalidad: cálida, elegante. Emojis sutiles. Respuestas muy cortas (máx 2 o
 - Otros servicios: menciona brevemente y retoma el tema de labios.
 - NUNCA inventes precios ni prometas resultados.`;
 
-// Sistema para detectar si una respuesta es relevante al contexto
-const SYSTEM_DETECTOR = `Eres un detector de relevancia. Responde SOLO con "SI" o "NO".
-¿El mensaje del usuario es una respuesta relevante a la pregunta que se le hizo?
-Si el mensaje es un saludo, pregunta diferente, o algo sin relación con la pregunta, responde "NO".
-Si el mensaje responde directamente la pregunta (aunque sea brevemente), responde "SI".`;
-
 function scroll(){ chat.scrollTop = chat.scrollHeight; }
 
 function addBotMsg(html, delay, isError){
@@ -187,22 +181,6 @@ function addAsesorCard(nombre){
 
 function setInput(enabled){ userInput.disabled=!enabled; sendBtn.disabled=!enabled; if(enabled) userInput.focus(); }
 
-async function esRespuestaRelevante(msg, pregunta){
-  try{
-    const res = await fetch("/api/chat",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        system: SYSTEM_DETECTOR,
-        messages: [{role:"user", content:"Pregunta: "+pregunta+"\nRespuesta del usuario: "+msg}]
-      })
-    });
-    const data = await res.json();
-    if(data.error) return false;
-    return data.content[0].text.trim().toUpperCase().includes("SI");
-  }catch(e){ return false; }
-}
-
 async function respuestaLibre(msg){
   conversationHistory.push({role:"user",content:msg});
   try{
@@ -224,58 +202,60 @@ function esMensajeFlujo(msg){
   return m==="sí"||m==="si"||m==="no"||state.step==="pregunta_producto"||state.step==="pedir_nombre";
 }
 
+// Palabras que indican que NO es una respuesta al flujo
+function esSaludoOPreguntaFuera(msg){
+  const m = msg.toLowerCase().trim();
+  const patrones = ["hola","buenas","buenos","hey","hi","hello","saludos","buen dia","buenas tardes","buenas noches","como estas","como esta","que tal","quien eres","que es esto","cuanto cuesta","cuanto vale","precio","precios","informacion","info"];
+  return patrones.some(p => m.includes(p));
+}
+
 async function handleMessage(msg){
   setInput(false);
 
-  // Paso antecedentes: solo acepta Sí/No explícito
+  // PASO ANTECEDENTES: solo acepta Sí/No
   if(state.step==="pregunta_antecedentes"){
     const m = msg.toLowerCase().trim();
-    const esSi = m==="sí" || m==="si" || m==="s";
-    const esNo = m==="no" || m==="n";
-    if(esSi){
+    if(m==="sí"||m==="si"||m==="s"){
       state.antecedentes=true; state.step="pregunta_producto";
       await addBotMsg(MSGS.pregunta_producto); setInput(true); return;
-    } else if(esNo){
+    } else if(m==="no"||m==="n"){
       state.antecedentes=false; state.step="pedir_fotos";
       await addBotMsg(MSGS.sin_antecedentes, 600);
       await pedirFotos(); return;
     } else {
-      // Mensaje fuera de contexto — IA responde y repite la pregunta
+      // Saludo u otra cosa — IA responde y repite pregunta con botones
       const resp = await respuestaLibre(msg);
-      if(resp) await addBotMsg(resp);
+      if(resp) await addBotMsg(resp, 800);
       await addBotMsg(MSGS.antecedentes, 800);
       addOptions(["Sí","No"],function(o){ addUserMsg(o); handleMessage(o); });
       return;
     }
   }
 
-  // Paso producto: verificar que la respuesta sea relevante
+  // PASO PRODUCTO: si es saludo/pregunta fuera → responde y repite. Si no → avanza
   if(state.step==="pregunta_producto"){
-    const esRelevante = await esRespuestaRelevante(msg, "¿Cuándo fue la última vez que lo aplicaste?");
-    if(esRelevante){
-      state.step="pedir_fotos";
-      await addBotMsg(MSGS.anotado);
-      await pedirFotos(); return;
-    } else {
+    if(esSaludoOPreguntaFuera(msg)){
       const resp = await respuestaLibre(msg);
-      if(resp) await addBotMsg(resp);
+      if(resp) await addBotMsg(resp, 800);
       await addBotMsg(MSGS.pregunta_producto, 800);
       setInput(true); return;
     }
+    state.step="pedir_fotos";
+    await addBotMsg(MSGS.anotado);
+    await pedirFotos(); return;
   }
 
-  // Paso nombre: cualquier respuesta es válida
+  // PASO NOMBRE: si es saludo → responde y repite. Si no → avanza
   if(state.step==="pedir_nombre"){
+    if(esSaludoOPreguntaFuera(msg)){
+      const resp = await respuestaLibre(msg);
+      if(resp) await addBotMsg(resp, 800);
+      await addBotMsg(MSGS.pedir_nombre, 800);
+      setInput(true); return;
+    }
     var nombre=msg.split(" ")[0]; state.step="finalizado";
     await addBotMsg("<em>"+nombre+"</em>, muchas gracias por tu confianza. Pronto descubrirás por qué somos la mejor opción cuando buscas armonía y salud ✨", 900);
     addAsesorCard(nombre); return;
-  }
-
-  // Fuera del flujo normal
-  if(!esMensajeFlujo(msg)){
-    const resp = await respuestaLibre(msg);
-    if(resp) await addBotMsg(resp);
-    await continuarFlujo(); return;
   }
 
   setInput(true);
