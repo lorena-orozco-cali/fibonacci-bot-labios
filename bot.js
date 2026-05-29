@@ -12,17 +12,24 @@ var M={
   s10:"Hemos recibido toda tu informaci\u00f3n y tus fotos. Nuestro equipo especializado se pondr\u00e1 en contacto contigo personalmente para orientarte y agendar tu cita, en el menor tiempo posible \uD83D\uDE0A"
 };
 
-// Respuestas fijas de fallback
-function fallback(m){
+function esPrecio(m){
   var t=m.toLowerCase();
-  if(t.indexOf("precio")>=0||t.indexOf("cuesta")>=0||t.indexOf("cuanto")>=0||t.indexOf("valor")>=0)
-    return "Los precios los maneja nuestro equipo seg\u00FAn una valoraci\u00f3n personalizada \uD83D\uDE0A Nuestro asesor te dar\u00e1 toda la informaci\u00f3n.";
-  if(t.indexOf("hola")>=0||t.indexOf("buenas")>=0||t.indexOf("hey")>=0)
-    return "\u00A1Hola! Bienvenid@, con gusto te atiendo \uD83D\uDE0A";
-  if(t.indexOf("gracias")>=0)
-    return "\u00A1Con mucho gusto! Estamos aqu\u00ed para ayudarte \uD83C\uDF3F";
-  if(t.indexOf("donde")>=0||t.indexOf("ubicaci")>=0)
-    return "Estamos en Cali, Colombia. Nuestro equipo te dar\u00e1 la direcci\u00f3n exacta al contactarte \uD83D\uDE0A";
+  return ["precio","cuesta","cuanto","valor","cuanto vale","cuanto cobran","cuanto queda"].some(function(p){return t.indexOf(p)>=0;});
+}
+
+function esFuera(m){
+  var t=m.toLowerCase();
+  return ["hola","buenas","hey","gracias","quien","donde"].some(function(p){return t.indexOf(p)>=0;});
+}
+
+function fallback(m){
+  if(esPrecio(m)) return "El perfilamiento labial tiene un valor que oscila entre $1.000.000 y $1.200.000 dependiendo del tratamiento personalizado que el doctor defina para ti \uD83C\uDF3F Nuestro asesor te dar\u00e1 todos los detalles en la valoraci\u00f3n.";
+  if(esFuera(m)){
+    var t=m.toLowerCase();
+    if(t.indexOf("hola")>=0||t.indexOf("buenas")>=0||t.indexOf("hey")>=0) return "\u00A1Hola! Bienvenid@, con gusto te atiendo \uD83D\uDE0A";
+    if(t.indexOf("gracias")>=0) return "\u00A1Con mucho gusto! Estamos aqu\u00ed para ayudarte \uD83C\uDF3F";
+    if(t.indexOf("donde")>=0) return "Estamos en Cali, Colombia. Nuestro equipo te dar\u00e1 la direcci\u00f3n exacta al contactarte \uD83D\uDE0A";
+  }
   return "Entendido \uD83D\uDE0A Continuemos con tu proceso de valoraci\u00f3n.";
 }
 
@@ -82,34 +89,36 @@ function sa(){
   c.innerHTML="<div class='asesor-title'>\u2746 Un asesor revisar\u00e1 tu caso</div><div class='asesor-sub'>"+M.s10+"</div><button class='asesor-btn' onclick=\"window.open('https://wa.me/573502480590','_blank')\">Confirmar por WhatsApp</button>";
   chat.appendChild(c);sc();en(false);
 }
-function ef(m){
-  var t=m.toLowerCase();
-  return ["hola","buenas","hey","precio","cuesta","cuanto","gracias","quien","donde","valor"].some(function(p){return t.indexOf(p)>=0;});
-}
 
-// IA con fallback automático
 function cia(txt,ctx,cb){
   var done=false;
-  // Timeout de 5 segundos - si no responde usa fallback
-  var timer=setTimeout(function(){
-    if(!done){done=true;cb(fallback(txt));}
-  },5000);
+  var timer=setTimeout(function(){if(!done){done=true;cb(fallback(txt));}},5000);
   fetch("/.netlify/functions/chat",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      system:"Eres asistente de Clinica Fibonacci, Dr. Esteban Pinto, Cali. Diseno labial. Respuestas cortas 1-2 oraciones. Contexto: "+ctx+". Precios: el equipo los maneja segun valoracion personalizada.",
+      system:"Eres asistente de Clinica Fibonacci, Dr. Esteban Pinto, Cali. Diseno labial. Respuestas cortas 1-2 oraciones. Contexto: "+ctx+". Si preguntan precio di exactamente: 'El perfilamiento labial tiene un valor que oscila entre $1.000.000 y $1.200.000 dependiendo del tratamiento personalizado que el doctor defina para ti \uD83C\uDF3F Nuestro asesor te dara todos los detalles en la valoracion.'",
       messages:[{role:"user",content:txt}]
     })
   }).then(function(r){return r.json();}).then(function(d){
     if(!done){done=true;clearTimeout(timer);cb(d&&d.content&&d.content[0]?d.content[0].text:fallback(txt));}
-  }).catch(function(){
-    if(!done){done=true;clearTimeout(timer);cb(fallback(txt));}
-  });
+  }).catch(function(){if(!done){done=true;clearTimeout(timer);cb(fallback(txt));}});
 }
 
 function hd(m){
   en(false);
+
+  // Si pregunta precio — responder siempre, en cualquier paso
+  if(esPrecio(m)){
+    bm(fallback(m),700).then(function(){
+      // Retomar el flujo donde estaba
+      if(step==="pregunta_antecedentes"){so(["S\u00ed","No"],hd);}
+      else if(step==="pedir_fotos"){if(!document.getElementById("uz")){sr();setTimeout(su,400);}en(true);}
+      else{en(true);}
+    });
+    return;
+  }
+
   if(step==="pregunta_antecedentes"){
     var t=m.toLowerCase().trim();
     if(t==="s\u00ed"||t==="si"){step="pregunta_producto";bm(M.s4).then(function(){en(true);});return;}
@@ -119,7 +128,7 @@ function hd(m){
     });return;
   }
   if(step==="pregunta_producto"){
-    if(ef(m)){cia(m,"Usuario debe indicar cuando fue su ultima aplicacion de acido hialuronico.",function(r){bm(r,600).then(function(){return bm(M.s4,700);}).then(function(){en(true);});});return;}
+    if(esFuera(m)){cia(m,"Usuario debe indicar cuando fue su ultima aplicacion de acido hialuronico.",function(r){bm(r,600).then(function(){return bm(M.s4,700);}).then(function(){en(true);});});return;}
     step="pedir_fotos";bm(M.s5).then(function(){return bm(M.s7,1000);}).then(function(){sr();setTimeout(su,500);en(true);});return;
   }
   if(step==="pedir_fotos"){
@@ -128,7 +137,7 @@ function hd(m){
     });return;
   }
   if(step==="pedir_nombre"){
-    if(ef(m)){cia(m,"Usuario debe indicar su nombre.",function(r){bm(r,600).then(function(){return bm(M.s9,700);}).then(function(){en(true);});});return;}
+    if(esFuera(m)){cia(m,"Usuario debe indicar su nombre.",function(r){bm(r,600).then(function(){return bm(M.s9,700);}).then(function(){en(true);});});return;}
     var n=m.split(" ")[0];step="fin";
     bm("<em>"+n+"</em>, muchas gracias por tu confianza. Pronto descubrir\u00e1s por qu\u00e9 somos la mejor opci\u00f3n cuando buscas armon\u00eda y salud \u2728",900).then(function(){sa();});return;
   }
