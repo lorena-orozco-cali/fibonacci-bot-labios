@@ -280,6 +280,7 @@ async function pedirFotos(){
   await addBotMsg(MSGS.pedir_fotos, 1100);
   addRefImage();
   setTimeout(addUploadZone, 700);
+  setInput(true); // Siempre dejar escribir
 }
 
 function sendText(){
